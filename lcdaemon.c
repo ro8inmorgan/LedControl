@@ -13,7 +13,6 @@
 
 typedef struct {
     char name[MAX_NAME_LEN];
-    int brightness;
     int effect;
     int duration;
     uint32_t color;
@@ -59,13 +58,7 @@ int read_settings(const char *filename, LightSettings *lights, int max_lights) {
             int temp_value;
             int temp_duration;
             uint32_t temp_color;
-            if (sscanf(line, "brightness=%d", &temp_value) == 1) {
-                if (lights[current_light].brightness != temp_value) {
-                    lights[current_light].brightness = temp_value;
-                    lights[current_light].updated = true;
-                }
-                continue;
-            }
+          
             if (sscanf(line, "effect=%d", &temp_value) == 1) {
                 if (lights[current_light].effect != temp_value) {
                     lights[current_light].effect = temp_value;
@@ -114,19 +107,19 @@ void update_light_settings(LightSettings *light, const char *dir, int *value) {
     char filepath[256];
     FILE *file;
 
-    // Update brightness based on specific light settings
-    if (strcmp(light->name, "m") == 0) {
-        snprintf(filepath, sizeof(filepath), "%s/max_scale", dir);
-    } else if (strcmp(light->name, "l") == 0 || strcmp(light->name, "r") == 0 || strcmp(light->name, "lr") == 0) {
-        snprintf(filepath, sizeof(filepath), "%s/max_scale_lr", dir);
-    } else if (strcmp(light->name, "f1") == 0 || strcmp(light->name, "f2") == 0) {
-        snprintf(filepath, sizeof(filepath), "%s/max_scale_f1f2", dir);
-    }
-    file = fopen(filepath, "w");
-    if (file != NULL) {
-        fprintf(file, "%d\n", light->brightness);
-        fclose(file);
-    }
+    // // Update brightness based on specific light settings
+    // if (strcmp(light->name, "m") == 0) {
+    //     snprintf(filepath, sizeof(filepath), "%s/max_scale", dir);
+    // } else if (strcmp(light->name, "l") == 0 || strcmp(light->name, "r") == 0 || strcmp(light->name, "lr") == 0) {
+    //     snprintf(filepath, sizeof(filepath), "%s/max_scale_lr", dir);
+    // } else if (strcmp(light->name, "f1") == 0 || strcmp(light->name, "f2") == 0) {
+    //     snprintf(filepath, sizeof(filepath), "%s/max_scale_f1f2", dir);
+    // }
+    // file = fopen(filepath, "w");
+    // if (file != NULL) {
+    //     fprintf(file, "%d\n", light->brightness);
+    //     fclose(file);
+    // }
 
     // Update effect and other settings
     snprintf(filepath, sizeof(filepath), "%s/effect_rgb_hex_%s", dir, light->name);

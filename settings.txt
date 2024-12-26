@@ -1,23 +1,19 @@
 [f1]
-brightness=100
 effect=4
 color=0xFFFFFF
 duration=1000
 
 [f2]
-brightness=100
-effect=4
-color=0xFFFFFF
+effect=2
+color=0xFF8000
 duration=1000
 
 [m]
-brightness=100
 effect=4
 color=0xFFFFFF
 duration=1000
 
 [lr]
-brightness=100
 effect=4
 color=0xFFFFFF
 duration=1000

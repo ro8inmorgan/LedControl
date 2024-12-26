@@ -12,7 +12,6 @@
 
 typedef struct {
     char name[MAX_NAME_LEN];
-    int brightness;
     int effect;
     uint32_t color;
     int duration;
@@ -45,10 +44,7 @@ int read_settings(const char *filename, LightSettings *lights, int max_lights) {
         } else if (current_light >= 0 && current_light < max_lights) {
             int temp_value;
             uint32_t temp_color;
-            if (sscanf(line, "brightness=%d", &temp_value) == 1) {
-                lights[current_light].brightness = temp_value;
-                continue;
-            }
+           
             if (sscanf(line, "effect=%d", &temp_value) == 1) {
                 lights[current_light].effect = temp_value;
                 continue;
@@ -78,7 +74,6 @@ int save_settings(const char *filename, LightSettings *lights, int max_lights) {
 
     for (int i = 0; i < max_lights; ++i) {
         fprintf(file, "[%s]\n", lights[i].name);
-        fprintf(file, "brightness=%d\n", lights[i].brightness);
         fprintf(file, "effect=%d\n", lights[i].effect);
         fprintf(file, "color=0x%06X\n", lights[i].color);
         fprintf(file, "duration=%d\n\n", lights[i].duration);
@@ -116,23 +111,15 @@ void handle_light_input(LightSettings *light, SDL_Event *event, int selected_set
     const int num_bright_colors = sizeof(bright_colors) / sizeof(bright_colors[0]);
 
     switch (selected_setting) {
-        case 0: // Brightness
-            if (event->key.keysym.sym == SDLK_RIGHT || event->cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_RIGHT) {
-                light->brightness = (light->brightness + 10) % 110;
-                if (light->brightness > 100) light->brightness = 0; // Ensure it wraps to 0 after 100
-            } else if (event->key.keysym.sym == SDLK_LEFT || event->cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_LEFT) {
-                light->brightness = (light->brightness - 10 + 110) % 110;
-                if (light->brightness > 100) light->brightness = 100; // Ensure it wraps to 100 after 0
-            }
-            break;
-        case 1: // Effect
+
+        case 0: // Effect
             if (event->key.keysym.sym == SDLK_RIGHT || event->cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_RIGHT) {
                 light->effect = (light->effect % 8) + 1; // Increase effect (1 to 8)
             } else if (event->key.keysym.sym == SDLK_LEFT || event->cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_LEFT) {
                 light->effect = (light->effect - 2 + 8) % 8 + 1; // Decrease effect (1 to 8)
             }
             break;
-        case 2: // Color
+        case 1: // Color
             if (event->key.keysym.sym == SDLK_RIGHT || event->cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_RIGHT) {
               int current_index = -1;
                 for (int i = 0; i < num_bright_colors; i++) {
@@ -153,7 +140,7 @@ void handle_light_input(LightSettings *light, SDL_Event *event, int selected_set
                 light->color = bright_colors[(current_index - 1 + num_bright_colors) % num_bright_colors];
             }
             break;
-        case 3: // Duration
+        case 2: // Duration
             if (event->key.keysym.sym == SDLK_RIGHT || event->cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_RIGHT) {
                 light->duration = (light->duration + 100) % 5000; // Increase duration
             } else if (event->key.keysym.sym == SDLK_LEFT || event->cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_LEFT) {
@@ -269,12 +256,12 @@ while (running) {
                     break;
                 case SDLK_RETURN:
                 case SDLK_KP_ENTER:
-                    SDL_Log("Selected: %s -> brightness: %d, effect: %d, color: 0x%06X, duration: %d",
-                            lights[selected_option].name,
-                            lights[selected_option].brightness,
-                            lights[selected_option].effect,
-                            lights[selected_option].color,
-                            lights[selected_option].duration);
+                    // SDL_Log("Selected: %s -> brightness: %d, effect: %d, color: 0x%06X, duration: %d",
+                    //         lights[selected_option].name,
+                    //         lights[selected_option].brightness,
+                    //         lights[selected_option].effect,
+                    //         lights[selected_option].color,
+                    //         lights[selected_option].duration);
                     break;
             }
         } else if (event.type == SDL_CONTROLLERBUTTONDOWN) {
@@ -297,12 +284,12 @@ while (running) {
                     break;
                 case SDL_CONTROLLER_BUTTON_B:
                     // strcpy(last_button_pressed, "DPAD Down");
-                    SDL_Log("Selected: %s -> brightness: %d, effect: %d, color: 0x%06X, duration: %d",
-                            lights[selected_option].name,
-                            lights[selected_option].brightness,
-                            lights[selected_option].effect,
-                            lights[selected_option].color,
-                            lights[selected_option].duration);
+                    // SDL_Log("Selected: %s -> brightness: %d, effect: %d, color: 0x%06X, duration: %d",
+                    //         lights[selected_option].name,
+                    //         lights[selected_option].brightness,
+                    //         lights[selected_option].effect,
+                    //         lights[selected_option].color,
+                    //         lights[selected_option].duration);
                     break;
                 case SDL_CONTROLLER_BUTTON_A:
                     SDL_Quit();
@@ -338,17 +325,16 @@ SDL_RenderCopy(renderer, texture, NULL, &dstrect);
 SDL_DestroyTexture(texture);
 
 // Display settings
-const char *settings_labels[4] = { "brightness", "effect", "color", "duration" };
+const char *settings_labels[4] = { "effect", "color", "duration" };
 int settings_values[4] = {
-    lights[selected_option].brightness,
     lights[selected_option].effect,
     lights[selected_option].color,
     lights[selected_option].duration
 };
 
-for (int j = 0; j < 4; ++j) {
+for (int j = 0; j < 3; ++j) {
     char setting_text[256];
-    if (j == 2) { // Display color as hex code
+    if (j == 1) { // Display color as hex code
         snprintf(setting_text, sizeof(setting_text), "%s: 0x%06X", settings_labels[j], settings_values[j]);
     } else {
         snprintf(setting_text, sizeof(setting_text), "%s: %d", settings_labels[j], settings_values[j]);
