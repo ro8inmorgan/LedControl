@@ -1,5 +1,5 @@
 # LedControl
-Led Control app for TrimUI Brick   
+Led Control app for TrimUI Brick (It's been reported on reddit that it works with Smart pro too)    
 Works with Stock OS and Stockmix, might work with others but not tested
 
 # Installation
