@@ -1,0 +1,7 @@
+apt-get update
+apt-get install libsdl2-dev libsdl2-ttf-dev
+
+
+gcc -o test test.c option.c -lSDL2 -lSDL2_ttf -lm
+
+gcc -o deamon deamon.c -lm
