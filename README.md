@@ -34,7 +34,7 @@ B Button to quit the application
 Please quit the app using the B button and not by holding the power button as that will also stop the Led Control background process
 
 # Important notes
-This is an initial first version I just wanted to get this out to you guys quickly so I still have to fix some things but please not the following
+This is an initial first version I just wanted to get this out to you guys quickly so I still have to fix some things but please note the following
 - After completely turning off your TrimUI Brick (not standby), the Led Control app needs to be started again. 
 - Brightness can be controlled in the TrimUI display settings
    
