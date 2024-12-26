@@ -7,6 +7,8 @@ Just unzip and copy the LedControl folder to the Apps folder on your SD Card, th
    
 After completely turning off your TrimUI Brick (not standby), the Led Control app needs to be started again. 
    
+Brightness can be controlled in the TrimUI display settings
+   
 L&R buttons are used to switch between lights: function button1 (f1), functionn button2 (f2), top light (m), triggers (lr)
    
 D-pad up/down you can select the setting of the light and left and right you can adjust the values
