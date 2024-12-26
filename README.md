@@ -41,6 +41,7 @@ This is an initial first version I just wanted to get this out to you guys quick
 # TODO:
 - Implementing auto start after cold boot
 - Color picker on screen (now shows hex codes of the colors)
+- Add more effects like reactive to controls
 - Brightness control in the app itself instead of using settings for this, for ease of use
 - General improvements of UI
 
