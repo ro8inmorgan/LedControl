@@ -36,10 +36,48 @@ void handle_sigcont(int sig)
 
 int read_settings(const char *filename, LightSettings *lights, int max_lights)
 {
-    FILE *file = fopen(filename, "r");
+    FILE *file;
+    if (first_run == 1)
+    { 
+        // first run read settings from disk and write to shm
+        printf("First run\n");
+
+        FILE *diskfile = fopen(filename, "r");
+        if (diskfile == NULL)
+        {
+            perror("Unable to open settings file");
+            return 1;
+        }
+
+        char shmfile[256];
+        snprintf(shmfile, sizeof(shmfile), "/dev/shm/%s", filename);
+        file = fopen(shmfile, "w");
+        if (file == NULL)
+        {
+            perror("Unable to open /dev/shm/ file");
+            fclose(diskfile); // closing the diskfile to avoid a memory leak
+            return 1;
+        }
+
+        char buffer[1024];
+        size_t bytesRead;
+        while ((bytesRead = fread(buffer, 1, sizeof(buffer), diskfile)) > 0)
+        {
+            fwrite(buffer, 1, bytesRead, file);
+        }
+
+        printf("File contents copied to /dev/shm/%s\n", filename);
+        fclose(file);
+        fclose(diskfile);
+    }
+
+    char shmfile[256];
+    snprintf(shmfile, sizeof(shmfile), "/dev/shm/%s", filename);
+    file = fopen(shmfile, "r");
     if (file == NULL)
     {
-        perror("Unable to open settings file");
+        perror("Unable to open /dev/shm/ file");
+        fclose(file);
         return 1;
     }
 
@@ -76,6 +114,7 @@ int read_settings(const char *filename, LightSettings *lights, int max_lights)
             {
                 if (lights[current_light].effect != temp_value)
                 {
+                    printf("effect changed\n");
                     lights[current_light].effect = temp_value;
                     lights[current_light].updated = true;
                 }

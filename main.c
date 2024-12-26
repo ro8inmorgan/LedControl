@@ -88,16 +88,31 @@ int save_settings(const char *filename, LightSettings *lights, int max_lights)
         return 1;
     }
 
+    char shmfile[256];
+    snprintf(shmfile, sizeof(shmfile), "/dev/shm/%s", filename);
+    FILE *shm_file = fopen(shmfile, "w");
+    if (shm_file == NULL)
+    {
+        perror("Unable to open settings file for writing");
+        return 1;
+    }
+
     for (int i = 0; i < max_lights; ++i)
     {
         fprintf(file, "[%s]\n", lights[i].name);
         fprintf(file, "effect=%d\n", lights[i].effect);
         fprintf(file, "color=0x%06X\n", lights[i].color);
         fprintf(file, "duration=%d\n\n", lights[i].duration);
+
+        fprintf(shm_file, "[%s]\n", lights[i].name);
+        fprintf(shm_file, "effect=%d\n", lights[i].effect);
+        fprintf(shm_file, "color=0x%06X\n", lights[i].color);
+        fprintf(shm_file, "duration=%d\n\n", lights[i].duration);
     }
 
     fclose(file);
-    SDL_Log("saved settings");
+    fclose(shm_file);
+    SDL_Log("saved settings to disk and shm");
     return 0;
 }
 
