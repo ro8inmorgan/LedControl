@@ -1,5 +1,6 @@
 # LedControl
-Led Control app for TrimUI Brick
+Led Control app for TrimUI Brick   
+Works with Stock OS and Stockmix, might work with others but not tested
    
 You can download the latest version of the Led Control app from the [Releases page](https://github.com/ro8inmorgan/LedControl/releases/tag/mainrelease).   
 Just unzip and copy the LedControl folder to the Apps folder on your SD Card, then bootup your TrimUI Brick and the Led Control app will be available in the Apps menu.
