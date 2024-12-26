@@ -8,6 +8,6 @@ After completely turning off your TrimUI Brick (not standby), the Led Control ap
 L&R buttons are used to switch between lights: function button1 (f1), functionn button2 (f2), top light (m), triggers (lr)
    
 # TODO:
--Implementing auto start
--Color picker on screen (now shows hex codes of the colors)
+- Implementing auto start
+- Color picker on screen (now shows hex codes of the colors)
 
