@@ -44,3 +44,6 @@ This is an initial first version I just wanted to get this out to you guys quick
 - Brightness control in the app itself instead of using settings for this, for ease of use
 - General improvements of UI
 
+# Donations
+Donations are always welcome https://ko-fi.com/robindev :) :)
+
