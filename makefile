@@ -1,9 +1,9 @@
 CC=gcc
-CFLAGS=-Wall -Wextra
+CFLAGS=-Wall
 LDFLAGS=-lSDL2 -lSDL2_ttf -lm
 PROJECT_NAME=LedControl
 
-.PHONY: all clean deps
+.PHONY: all main clean deps
 
 all: main lcdaemon 
 
@@ -22,7 +22,8 @@ package:
 
 	# Create project package for MinUI
 	mkdir -p release/${PROJECT_NAME}.pak
-	cp release/${PROJECT_NAME}/* release/${PROJECT_NAME}.pak
+	cp config.json icon.png main.ttf settings.txt build/* release/${PROJECT_NAME}.pak
+	cp minui_launch.sh release/${PROJECT_NAME}.pak/launch.sh
 
 clean:
 	rm -rf build release
