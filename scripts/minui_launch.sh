@@ -1,23 +1,23 @@
 #!/bin/sh
 # Becomes LedControl.pak/launch.sh
 export BASE_LED_PATH="/sys/class/led_anim"
-# export LED_PATH="$BASE_LED_PATH/max_scale"
-# export FRONT_LED_PATH="$BASE_LED_PATH/max_scale_f1f2"
-# export BACK_LED_PATH="$BASE_LED_PATH/max_scale_lr"
-# export MINUI_PAK_SH_PATH="./mnt/SDCARD/.system/tg3040/paks/MinUI.pak/launch.sh"
+export LED_PATH="$BASE_LED_PATH/max_scale"
+export FRONT_LED_PATH="$BASE_LED_PATH/max_scale_f1f2"
+export BACK_LED_PATH="$BASE_LED_PATH/max_scale_lr"
+
 echo $0 $*
 cd $(dirname "$0")
 
 # Allow the application to change the LEDs
-chmod a+w $LED_PATH/* file_lock.log 2>&1
+chmod a+w $LED_PATH/*
 
 # This is a daemon that listens for changes to settings.txt and applies
 # them to the corresponding LED file
-if pgrep -f "lcdaemon" >/dev/null; then
-    echo "lcdaemon is already running" > launch.log
+if pgrep -f "settings_daemon" >/dev/null; then
+    echo "settings_daemon is already running" > launch.log
 else
-    ./lcdaemon &
-    echo "lcdaemon started" > launch.log
+    ./settings_daemon &
+    echo "settings_daemon started" > launch.log
 fi
 
 # turn LEDS on
@@ -35,4 +35,4 @@ echo 60 | tee $LED_PATH $FRONT_LED_PATH $BACK_LED_PATH
 chmod a-w $LED_PATH/* 
 
 # Kill the lcddaemon when the application exits
-killall lcdaemon
+killall settings_daemon

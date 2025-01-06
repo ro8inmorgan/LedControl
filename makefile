@@ -5,15 +5,15 @@ PROJECT_NAME=LedControl
 
 .PHONY: all clean deps
 
-all: main lcdaemon test
+all: led_control settings_daemon test
 
-main:
+led_control:
 	mkdir -p build
-	$(CC) $(CFLAGS) src/main.c src/option.c -o build/$@ $(LDFLAGS)
+	$(CC) $(CFLAGS) src/led_control.c src/option.c -o build/$@ $(LDFLAGS)
 
-lcdaemon:
+settings_daemon:
 	mkdir -p build
-	$(CC) $(CFLAGS) src/lcdaemon.c -o build/$@ -lm
+	$(CC) $(CFLAGS) src/settings_daemon.c -o build/$@ -lm
 
 test:
 	mkdir -p build
