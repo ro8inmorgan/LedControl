@@ -1,4 +1,6 @@
 #!/bin/sh
+# Becomes LedControl.pak/launch.sh
+
 echo $0 $*
 cd $(dirname "$0")
 

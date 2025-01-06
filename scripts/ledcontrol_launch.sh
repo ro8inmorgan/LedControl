@@ -1,4 +1,5 @@
 #!/bin/sh
+# Becomes LedControl/launch.sh
 
 # Check if deamon is running
 if pgrep -f "lcdaemon" >/dev/null; then

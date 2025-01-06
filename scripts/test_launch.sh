@@ -1,4 +1,6 @@
 #!/bin/sh
+# Becomes Test/launch.sh
+
 echo $0 $*
 cd $(dirname "$0")
 
