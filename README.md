@@ -42,3 +42,9 @@ This will use the selected color for on and last used color for off, so for exam
 
 B Button to quit the application   
 Please quit the app using the B button and not by holding the power button as that will also stop the Led Control background process
+
+
+## Todo
+- Update the UI. 
+- Allow brightness control.
+- Save brightness information to a config file and read from it at startup.
