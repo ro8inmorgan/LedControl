@@ -119,47 +119,65 @@ int save_settings(const char *filename, LightSettings *lights, int max_lights)
 void handle_light_input(LightSettings *light, SDL_Event *event, int selected_setting)
 {
     const uint32_t bright_colors[] = {
+        // Blues
         0x000080, // Navy Blue
-        0x008080, // Teal
         0x0080FF, // Sky Blue
         0x00BFFF, // Deep Sky Blue
-        0x00FF00, // Green
-        0x00FF80, // Aqua
-        0x00FFFF, // Cyan
-        0x32CD32, // Lime Green
-        0x40E0D0, // Turquoise
+        0x8080FF, // Light Blue
         0x483D8B, // Dark Slate Blue
         0x7B68EE, // Medium Slate Blue
+
+        // Cyan
+        0x00FFFF, // Cyan
+        0x40E0D0, // Turquoise
+        0x80FFFF, // Light Cyan
+        0x008080, // Teal
+        0x00CED1, // Dark Turquoise
+        0x20B2AA, // Light Sea Green
+
+        // Green
+        0x00FF00, // Green
+        0x32CD32, // Lime Green
         0x7FFF00, // Chartreuse
         0x80FF00, // Lime
         0x80FF80, // Light Green
-        0x80FFFF, // Light Cyan
-        0x8080FF, // Light Blue
+        0xADFF2F, // Green Yellow
+
+        // Magenta
+        0xFF00FF, // Magenta
+        0xFF80C0, // Light Magenta
+        0xEE82EE, // Violet
+        0xDA70D6, // Orchid
+        0xDDA0DD, // Plum
+        0xBA55D3, // Medium Orchid
+
+        // Purple
+        0x800080, // Purple
         0x8A2BE2, // Blue Violet
         0x9400D3, // Dark Violet
-        0xADFF2F, // Green Yellow
-        0xBA55D3, // Medium Orchid
-        0xC0C0C0, // Silver
-        0xDA70D6, // Orchid
-        0xDC143C, // Crimson
-        0xDDA0DD, // Plum
-        0xEE82EE, // Violet
+        0x9B30FF, // Purple2
+        0xA020F0, // Purple
+        0x9370DB, // Medium Purple
+
+        // Red
         0xFF0000, // Red
-        0xFF00FF, // Magenta
-        0xFF0080, // Hot Pink
-        0xFF1493, // Deep Pink
         0xFF4500, // Red Orange
         0xFF6347, // Tomato
+        0xDC143C, // Crimson
         0xFF69B4, // Hot Pink
-        0xFF80C0, // Light Magenta
-        0xFF80FF, // Light Pink
-        0xFF8000, // Orange Red
-        0xFFA500, // Orange
-        0xFFB6C1, // Pink
+        0xFF1493, // Deep Pink
+
+        // Yellow and Orange
         0xFFD700, // Gold
+        0xFFA500, // Orange
+        0xFF8000, // Orange Red
         0xFFFF00, // Yellow
         0xFFFF80, // Light Yellow
-        0xFFFFFF  // White
+        0xFFDAB9, // Peach Puff
+
+        // Others
+        0xFFFFFF, // White
+        0xC0C0C0  // Silver
     };
 
     const int num_bright_colors = sizeof(bright_colors) / sizeof(bright_colors[0]);
@@ -189,7 +207,9 @@ void handle_light_input(LightSettings *light, SDL_Event *event, int selected_set
                     break;
                 }
             }
+               SDL_Log("saved settings to disk and shm %d",current_index);
             light->color = bright_colors[(current_index + 1) % num_bright_colors];
+          
         }
         else if (event->key.keysym.sym == SDLK_LEFT || event->cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_LEFT)
         {
