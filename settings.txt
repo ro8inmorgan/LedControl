@@ -4,8 +4,8 @@ color=0xFFFFFF
 duration=1000
 
 [f2]
-effect=2
-color=0xFF8000
+effect=4
+color=0xFFFFFF
 duration=1000
 
 [m]

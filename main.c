@@ -118,29 +118,50 @@ int save_settings(const char *filename, LightSettings *lights, int max_lights)
 
 void handle_light_input(LightSettings *light, SDL_Event *event, int selected_setting)
 {
-
     const uint32_t bright_colors[] = {
-        0xFF0000, // Red
-        0x00FF00, // Green
-        0x0000FF, // Blue
-        0xFFFF00, // Yellow
-        0x00FFFF, // Cyan
-        0xFF00FF, // Magenta
-        0xFFFFFF, // White
-        0xFF8000, // Orange
-        0x8000FF, // Purple
-        0x80FF00, // Lime
-        0x00FF80, // Aqua
+        0x000080, // Navy Blue
+        0x008080, // Teal
         0x0080FF, // Sky Blue
-        0xFF0080, // Hot Pink
-        0xFF80FF, // Light Pink
+        0x00BFFF, // Deep Sky Blue
+        0x00FF00, // Green
+        0x00FF80, // Aqua
+        0x00FFFF, // Cyan
+        0x32CD32, // Lime Green
+        0x40E0D0, // Turquoise
+        0x483D8B, // Dark Slate Blue
+        0x7B68EE, // Medium Slate Blue
+        0x7FFF00, // Chartreuse
+        0x80FF00, // Lime
         0x80FF80, // Light Green
-        0x8080FF, // Light Blue
-        0xFFFF80, // Light Yellow
         0x80FFFF, // Light Cyan
-        0xFF8080, // Light Red
-        0xFF80C0  // Light Magenta
+        0x8080FF, // Light Blue
+        0x8A2BE2, // Blue Violet
+        0x9400D3, // Dark Violet
+        0xADFF2F, // Green Yellow
+        0xBA55D3, // Medium Orchid
+        0xC0C0C0, // Silver
+        0xDA70D6, // Orchid
+        0xDC143C, // Crimson
+        0xDDA0DD, // Plum
+        0xEE82EE, // Violet
+        0xFF0000, // Red
+        0xFF00FF, // Magenta
+        0xFF0080, // Hot Pink
+        0xFF1493, // Deep Pink
+        0xFF4500, // Red Orange
+        0xFF6347, // Tomato
+        0xFF69B4, // Hot Pink
+        0xFF80C0, // Light Magenta
+        0xFF80FF, // Light Pink
+        0xFF8000, // Orange Red
+        0xFFA500, // Orange
+        0xFFB6C1, // Pink
+        0xFFD700, // Gold
+        0xFFFF00, // Yellow
+        0xFFFF80, // Light Yellow
+        0xFFFFFF  // White
     };
+
     const int num_bright_colors = sizeof(bright_colors) / sizeof(bright_colors[0]);
 
     switch (selected_setting)
@@ -223,13 +244,13 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // SDL_Window *window = SDL_CreateWindow("Options Example",
-    //                                       SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-    //                                       800, 600, SDL_WINDOW_SHOWN);
-
     SDL_Window *window = SDL_CreateWindow("Options Example",
                                           SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                          800, 600, SDL_WINDOW_FULLSCREEN_DESKTOP);
+                                          800, 600, SDL_WINDOW_SHOWN);
+
+    // SDL_Window *window = SDL_CreateWindow("Options Example",
+    //                                       SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+    //                                       800, 600, SDL_WINDOW_FULLSCREEN_DESKTOP);
 
     if (!window)
     {
@@ -291,6 +312,20 @@ int main(int argc, char *argv[])
     int selected_setting = 0;
     bool running = true;
     SDL_Event event;
+
+    SDL_Color hex_to_sdl_color(uint32_t hex)
+    {
+        SDL_Color color;
+        color.r = (hex >> 16) & 0xFF;
+        color.g = (hex >> 8) & 0xFF;
+        color.b = hex & 0xFF;
+        color.a = 255;
+        return color;
+    }
+
+    const char *effect_names[] = {
+        "Linear", "Breathe", "Interval Breathe", "Static",
+        "Blink 1", "Blink 2", "Blink 3", "Rainbow"};
 
     while (running)
     {
@@ -364,6 +399,7 @@ int main(int argc, char *argv[])
                 }
             }
         }
+
         // Get the window size
         int window_width, window_height;
         SDL_GetWindowSize(window, &window_width, &window_height);
@@ -391,8 +427,8 @@ int main(int argc, char *argv[])
         SDL_DestroyTexture(texture);
 
         // Display settings
-        const char *settings_labels[4] = {"effect", "color", "duration"};
-        int settings_values[4] = {
+        const char *settings_labels[3] = {"Effect", "Color", "Speed"};
+        int settings_values[3] = {
             lights[selected_option].effect,
             lights[selected_option].color,
             lights[selected_option].duration};
@@ -400,41 +436,85 @@ int main(int argc, char *argv[])
         for (int j = 0; j < 3; ++j)
         {
             char setting_text[256];
-            if (j == 1)
+            if (j == 0)
+            { // Display effect name instead of number
+                snprintf(setting_text, sizeof(setting_text), "%s: %s", settings_labels[j], effect_names[settings_values[j] - 1]);
+
+                // Render the effect name
+                SDL_Color current_color = (j == selected_setting) ? highlight_color : color;
+
+                surface = TTF_RenderText_Solid(font, setting_text, current_color);
+                texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+                text_width = surface->w;
+                text_height = surface->h;
+                SDL_FreeSurface(surface);
+
+                // Calculate centered position
+                dstrect = (SDL_Rect){(window_width - text_width) / 2, 150 + j * 50, text_width, text_height};
+                SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+                SDL_DestroyTexture(texture);
+            }
+            else if (j == 1)
             { // Display color as hex code
-                snprintf(setting_text, sizeof(setting_text), "%s: 0x%06X", settings_labels[j], settings_values[j]);
+                snprintf(setting_text, sizeof(setting_text), "COLOR: 0x%06X", settings_values[j]);
+
+                // Draw color cube
+                SDL_Color color_cube = hex_to_sdl_color(settings_values[j]);
+                SDL_Rect color_rect = {(window_width - 50) / 2 + 150, 160 + j * 50, 50, 50}; // Cube size 50x50, adjust x position as needed
+                SDL_SetRenderDrawColor(renderer, color_cube.r, color_cube.g, color_cube.b, color_cube.a);
+                SDL_RenderFillRect(renderer, &color_rect);
+
+                // Render the "COLOR:" text
+                SDL_Color current_color = (j == selected_setting) ? highlight_color : color; // Highlight color if selected
+                surface = TTF_RenderText_Solid(font, "COLOR:", current_color);
+                texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+                text_width = surface->w;
+                text_height = surface->h;
+                SDL_FreeSurface(surface);
+
+                // Calculate text position
+                dstrect = (SDL_Rect){(window_width - text_width) / 2, 150 + j * 50, text_width, text_height};
+                SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+                SDL_DestroyTexture(texture);
             }
             else
             {
                 snprintf(setting_text, sizeof(setting_text), "%s: %d", settings_labels[j], settings_values[j]);
+
+                SDL_Color current_color = (j == selected_setting) ? highlight_color : color;
+
+                surface = TTF_RenderText_Solid(font, setting_text, current_color);
+                texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+                text_width = surface->w;
+                text_height = surface->h;
+                SDL_FreeSurface(surface);
+
+                // Calculate centered position
+                dstrect = (SDL_Rect){(window_width - text_width) / 2, 150 + j * 50, text_width, text_height};
+                SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+                SDL_DestroyTexture(texture);
             }
-
-            SDL_Color current_color = (j == selected_setting) ? highlight_color : color;
-
-            surface = TTF_RenderText_Solid(font, setting_text, current_color);
-            texture = SDL_CreateTextureFromSurface(renderer, surface);
-
-            text_width = surface->w;
-            text_height = surface->h;
-            SDL_FreeSurface(surface);
-
-            // Calculate centered position
-            dstrect = (SDL_Rect){(window_width - text_width) / 2, 150 + j * 50, text_width, text_height};
-            SDL_RenderCopy(renderer, texture, NULL, &dstrect);
-            SDL_DestroyTexture(texture);
         }
 
         char button_text[256];
-        snprintf(button_text, sizeof(button_text), "L&R LIGHT SELECT, DPAD CHANGING OPTIONS, B BUTTON TO QUIT");
+        snprintf(button_text, sizeof(button_text), "L&R LIGHT SELECT");
         surface = TTF_RenderText_Solid(font, button_text, color);
         texture = SDL_CreateTextureFromSurface(renderer, surface);
 
-        text_width = surface->w;
-        text_height = surface->h;
-        SDL_FreeSurface(surface);
-
         // Calculate centered position
         dstrect = (SDL_Rect){(window_width - text_width) / 2, 400, text_width, text_height};
+        SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+        SDL_DestroyTexture(texture);
+
+        snprintf(button_text, sizeof(button_text), "B BUTTON TO QUIT");
+        surface = TTF_RenderText_Solid(font, button_text, color);
+        texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+        // Calculate centered position
+        dstrect = (SDL_Rect){(window_width - text_width) / 2, 450, text_width, text_height};
         SDL_RenderCopy(renderer, texture, NULL, &dstrect);
         SDL_DestroyTexture(texture);
 
@@ -445,7 +525,7 @@ int main(int argc, char *argv[])
         text_width = surface->w;
         text_height = surface->h;
         SDL_FreeSurface(surface);
-        dstrect = (SDL_Rect){(window_width - text_width) / 2, 500, text_width, text_height};
+        dstrect = (SDL_Rect){(window_width - text_width) / 2, 530, text_width, text_height};
         SDL_RenderCopy(renderer, texture, NULL, &dstrect);
         SDL_DestroyTexture(texture);
 
