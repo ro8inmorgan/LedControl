@@ -41,7 +41,9 @@ This is an initial first version I just wanted to get this out to you guys quick
 # TODO:
 - Implementing auto start after cold boot
 - Color picker on screen (now shows hex codes of the colors)
+- Create version for MinUI and Knulli
 - Add more effects like reactive to controls
+- If possible maybe ambilight function, need to test if I can access the screen buffer
 - Brightness control in the app itself instead of using settings for this, for ease of use
 - General improvements of UI
 
