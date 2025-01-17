@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_image.h>
 #include "option.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -16,9 +17,12 @@ typedef struct
     int effect;
     uint32_t color;
     int duration;
+    char friendlyname[50];
 } LightSettings;
 
 LightSettings lights[NUM_OPTIONS];
+const char *lightnames[] = {
+    "F1 key", "F2 key", "Top bar", "L&R Buttons"};
 
 int read_settings(const char *filename, LightSettings *lights, int max_lights)
 {
@@ -43,6 +47,7 @@ int read_settings(const char *filename, LightSettings *lights, int max_lights)
                 if (current_light < max_lights)
                 {
                     strncpy(lights[current_light].name, light_name, MAX_NAME_LEN - 1);
+                    strncpy(lights[current_light].friendlyname, lightnames[current_light], MAX_NAME_LEN - 1);
                     lights[current_light].name[MAX_NAME_LEN - 1] = '\0'; // Ensure null-termination
                 }
                 else
@@ -177,7 +182,8 @@ void handle_light_input(LightSettings *light, SDL_Event *event, int selected_set
 
         // Others
         0xFFFFFF, // White
-        0xC0C0C0  // Silver
+        0xC0C0C0, // Silver
+        0x000000  // Black
     };
 
     const int num_bright_colors = sizeof(bright_colors) / sizeof(bright_colors[0]);
@@ -188,11 +194,11 @@ void handle_light_input(LightSettings *light, SDL_Event *event, int selected_set
     case 0: // Effect
         if (event->key.keysym.sym == SDLK_RIGHT || event->cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_RIGHT)
         {
-            light->effect = (light->effect % 8) + 1; // Increase effect (1 to 8)
+            light->effect = (light->effect % 15) + 1; // Increase effect (1 to 8)
         }
         else if (event->key.keysym.sym == SDLK_LEFT || event->cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_LEFT)
         {
-            light->effect = (light->effect - 2 + 8) % 8 + 1; // Decrease effect (1 to 8)
+            light->effect = (light->effect - 2 + 15) % 15 + 1; // Decrease effect (1 to 8)
         }
         break;
     case 1: // Color
@@ -207,9 +213,8 @@ void handle_light_input(LightSettings *light, SDL_Event *event, int selected_set
                     break;
                 }
             }
-               SDL_Log("saved settings to disk and shm %d",current_index);
+            SDL_Log("saved settings to disk and shm %d", current_index);
             light->color = bright_colors[(current_index + 1) % num_bright_colors];
-          
         }
         else if (event->key.keysym.sym == SDLK_LEFT || event->cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_LEFT)
         {
@@ -266,7 +271,7 @@ int main(int argc, char *argv[])
 
     SDL_Window *window = SDL_CreateWindow("Options Example",
                                           SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                          800, 600, SDL_WINDOW_SHOWN);
+                                          1024, 768, SDL_WINDOW_SHOWN);
 
     // SDL_Window *window = SDL_CreateWindow("Options Example",
     //                                       SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -288,8 +293,9 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    TTF_Font *font = TTF_OpenFont("main.ttf", 36); // Specify your font path
-    if (!font)
+    TTF_Font *font = TTF_OpenFont("main.ttf", 36);   // Specify your font path
+    TTF_Font *fontsm = TTF_OpenFont("main.ttf", 24); // Specify your font path
+    if (!font || !fontsm)
     {
         SDL_Log("Unable to open font: %s", TTF_GetError());
         SDL_DestroyRenderer(renderer);
@@ -345,8 +351,14 @@ int main(int argc, char *argv[])
 
     const char *effect_names[] = {
         "Linear", "Breathe", "Interval Breathe", "Static",
-        "Blink 1", "Blink 2", "Blink 3", "Rainbow"};
+        "Blink 1", "Blink 2", "Blink 3", "Rainbow", "TwinkleEffect",
+        "FireEffect", "GlitterEffect", "NeonGlowEffect", "FireflyEffect", "AuroraEffect", "Reactive"};
 
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+    // Get the window size
+    int window_width, window_height;
+    SDL_GetWindowSize(window, &window_width, &window_height);
     while (running)
     {
         while (SDL_PollEvent(&event))
@@ -360,13 +372,13 @@ int main(int argc, char *argv[])
                 switch (event.key.keysym.sym)
                 {
                 case SDLK_DOWN:
-                    selected_option = (selected_option + 1) % NUM_OPTIONS;
+                    selected_setting = (selected_setting + 1) % 3;
                     break;
                 case SDLK_UP:
-                    selected_option = (selected_option - 1 + NUM_OPTIONS) % NUM_OPTIONS;
+                    selected_setting = (selected_setting - 1 + 3) % 3;
                     break;
                 case SDLK_TAB:
-                    selected_setting = (selected_setting + 1) % 4; // Switch between settings
+                    selected_option = (selected_option - 1 + NUM_OPTIONS) % NUM_OPTIONS;
                     break;
                 case SDLK_RIGHT:
                 case SDLK_LEFT:
@@ -388,10 +400,10 @@ int main(int argc, char *argv[])
                 switch (event.cbutton.button)
                 {
                 case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-                    selected_setting = (selected_setting + 1) % 4; // Switch between settings
+                    selected_setting = (selected_setting + 1) % 3;
                     break;
                 case SDL_CONTROLLER_BUTTON_DPAD_UP:
-                    selected_setting = (selected_setting - 1) % 4; // Switch between settings
+                    selected_setting = (selected_setting - 1 + 3) % 3;
                     break;
                 case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
                     selected_option = (selected_option - 1 + NUM_OPTIONS) % NUM_OPTIONS;
@@ -420,10 +432,6 @@ int main(int argc, char *argv[])
             }
         }
 
-        // Get the window size
-        int window_width, window_height;
-        SDL_GetWindowSize(window, &window_width, &window_height);
-
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
@@ -433,7 +441,7 @@ int main(int argc, char *argv[])
 
         // Display light name
         char light_name_text[256];
-        snprintf(light_name_text, sizeof(light_name_text), "[%s]", lights[selected_option].name);
+        snprintf(light_name_text, sizeof(light_name_text), "[%s]", lights[selected_option].friendlyname);
         SDL_Surface *surface = TTF_RenderText_Solid(font, light_name_text, selected_color);
         SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
 
@@ -442,7 +450,7 @@ int main(int argc, char *argv[])
         SDL_FreeSurface(surface);
 
         // Calculate centered position
-        SDL_Rect dstrect = {(window_width - text_width) / 2, 100, text_width, text_height};
+        SDL_Rect dstrect = {(window_width - text_width) / 2, 150, text_width, text_height};
         SDL_RenderCopy(renderer, texture, NULL, &dstrect);
         SDL_DestroyTexture(texture);
 
@@ -471,19 +479,13 @@ int main(int argc, char *argv[])
                 SDL_FreeSurface(surface);
 
                 // Calculate centered position
-                dstrect = (SDL_Rect){(window_width - text_width) / 2, 150 + j * 50, text_width, text_height};
+                dstrect = (SDL_Rect){(window_width - text_width) / 2, 200, text_width, text_height};
                 SDL_RenderCopy(renderer, texture, NULL, &dstrect);
                 SDL_DestroyTexture(texture);
             }
             else if (j == 1)
             { // Display color as hex code
                 snprintf(setting_text, sizeof(setting_text), "COLOR: 0x%06X", settings_values[j]);
-
-                // Draw color cube
-                SDL_Color color_cube = hex_to_sdl_color(settings_values[j]);
-                SDL_Rect color_rect = {(window_width - 50) / 2 + 150, 160 + j * 50, 50, 50}; // Cube size 50x50, adjust x position as needed
-                SDL_SetRenderDrawColor(renderer, color_cube.r, color_cube.g, color_cube.b, color_cube.a);
-                SDL_RenderFillRect(renderer, &color_rect);
 
                 // Render the "COLOR:" text
                 SDL_Color current_color = (j == selected_setting) ? highlight_color : color; // Highlight color if selected
@@ -492,10 +494,17 @@ int main(int argc, char *argv[])
 
                 text_width = surface->w;
                 text_height = surface->h;
+
+                // Draw color cube
+                SDL_Color color_cube = hex_to_sdl_color(settings_values[j]);
+                SDL_Rect color_rect = {(window_width - text_width) / 2 + text_width, 200 + j * (text_height), 50, 44}; // Cube size 50x50, adjust x position as needed
+                SDL_SetRenderDrawColor(renderer, color_cube.r, color_cube.g, color_cube.b, color_cube.a);
+                SDL_RenderFillRect(renderer, &color_rect);
+
                 SDL_FreeSurface(surface);
 
                 // Calculate text position
-                dstrect = (SDL_Rect){(window_width - text_width) / 2, 150 + j * 50, text_width, text_height};
+                dstrect = (SDL_Rect){(window_width - text_width) / 2, 200 + j * 50, text_width, text_height};
                 SDL_RenderCopy(renderer, texture, NULL, &dstrect);
                 SDL_DestroyTexture(texture);
             }
@@ -513,7 +522,7 @@ int main(int argc, char *argv[])
                 SDL_FreeSurface(surface);
 
                 // Calculate centered position
-                dstrect = (SDL_Rect){(window_width - text_width) / 2, 150 + j * 50, text_width, text_height};
+                dstrect = (SDL_Rect){(window_width - text_width) / 2, 200 + j * 50, text_width, text_height};
                 SDL_RenderCopy(renderer, texture, NULL, &dstrect);
                 SDL_DestroyTexture(texture);
             }
@@ -521,37 +530,40 @@ int main(int argc, char *argv[])
 
         char button_text[256];
         snprintf(button_text, sizeof(button_text), "L&R LIGHT SELECT");
-        surface = TTF_RenderText_Solid(font, button_text, color);
+        surface = TTF_RenderText_Solid(fontsm, button_text, color);
         texture = SDL_CreateTextureFromSurface(renderer, surface);
-
-        // Calculate centered position
-        dstrect = (SDL_Rect){(window_width - text_width) / 2, 400, text_width, text_height};
-        SDL_RenderCopy(renderer, texture, NULL, &dstrect);
-        SDL_DestroyTexture(texture);
-
-        snprintf(button_text, sizeof(button_text), "B BUTTON TO QUIT");
-        surface = TTF_RenderText_Solid(font, button_text, color);
-        texture = SDL_CreateTextureFromSurface(renderer, surface);
-
-        // Calculate centered position
-        dstrect = (SDL_Rect){(window_width - text_width) / 2, 450, text_width, text_height};
-        SDL_RenderCopy(renderer, texture, NULL, &dstrect);
-        SDL_DestroyTexture(texture);
-
-        snprintf(button_text, sizeof(button_text), "By Robin Morgan :D");
-        surface = TTF_RenderText_Solid(font, button_text, color);
-        texture = SDL_CreateTextureFromSurface(renderer, surface);
-
         text_width = surface->w;
         text_height = surface->h;
-        SDL_FreeSurface(surface);
-        dstrect = (SDL_Rect){(window_width - text_width) / 2, 530, text_width, text_height};
+        // Calculate centered position
+        dstrect = (SDL_Rect){(window_width - text_width) / 2, 430, text_width, text_height};
         SDL_RenderCopy(renderer, texture, NULL, &dstrect);
         SDL_DestroyTexture(texture);
+        SDL_FreeSurface(surface);
+
+        snprintf(button_text, sizeof(button_text), "B BUTTON TO QUIT");
+        surface = TTF_RenderText_Solid(fontsm, button_text, color);
+        texture = SDL_CreateTextureFromSurface(renderer, surface);
+        text_width = surface->w;
+        text_height = surface->h;
+        // Calculate centered position
+        dstrect = (SDL_Rect){(window_width - text_width) / 2, 480, text_width, text_height};
+        SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+        SDL_DestroyTexture(texture);
+        SDL_FreeSurface(surface);
+
+        snprintf(button_text, sizeof(button_text), "By Robin Morgan :D");
+        surface = TTF_RenderText_Solid(fontsm, button_text, color);
+        texture = SDL_CreateTextureFromSurface(renderer, surface);
+        text_width = surface->w;
+        text_height = surface->h;
+
+        dstrect = (SDL_Rect){(window_width - text_width) / 2, 580, text_width, text_height};
+        SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+        SDL_DestroyTexture(texture);
+        SDL_FreeSurface(surface);
 
         SDL_RenderPresent(renderer);
     }
-
     TTF_CloseFont(font);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
