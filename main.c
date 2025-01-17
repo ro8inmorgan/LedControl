@@ -18,6 +18,7 @@ typedef struct
     uint32_t color;
     int duration;
     char friendlyname[50];
+    int maxeffects;
 } LightSettings;
 
 LightSettings lights[NUM_OPTIONS];
@@ -76,6 +77,11 @@ int read_settings(const char *filename, LightSettings *lights, int max_lights)
                 lights[current_light].duration = temp_value;
                 continue;
             }
+            if (sscanf(line, "maxeffects=%d", &temp_value) == 1)
+            {
+                lights[current_light].maxeffects = temp_value;
+                continue;
+            }
         }
     }
 
@@ -107,12 +113,14 @@ int save_settings(const char *filename, LightSettings *lights, int max_lights)
         fprintf(file, "[%s]\n", lights[i].name);
         fprintf(file, "effect=%d\n", lights[i].effect);
         fprintf(file, "color=0x%06X\n", lights[i].color);
-        fprintf(file, "duration=%d\n\n", lights[i].duration);
+        fprintf(file, "duration=%d\n", lights[i].duration);
+        fprintf(file, "maxeffects=%d\n\n", lights[i].maxeffects);
 
         fprintf(shm_file, "[%s]\n", lights[i].name);
         fprintf(shm_file, "effect=%d\n", lights[i].effect);
         fprintf(shm_file, "color=0x%06X\n", lights[i].color);
-        fprintf(shm_file, "duration=%d\n\n", lights[i].duration);
+        fprintf(shm_file, "duration=%d\n", lights[i].duration);
+        fprintf(shm_file, "maxeffects=%d\n\n", lights[i].maxeffects);
     }
 
     fclose(file);
@@ -194,11 +202,11 @@ void handle_light_input(LightSettings *light, SDL_Event *event, int selected_set
     case 0: // Effect
         if (event->key.keysym.sym == SDLK_RIGHT || event->cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_RIGHT)
         {
-            light->effect = (light->effect % 15) + 1; // Increase effect (1 to 8)
+            light->effect = (light->effect % light->maxeffects) + 1; // Increase effect (1 to 8)
         }
         else if (event->key.keysym.sym == SDLK_LEFT || event->cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_LEFT)
         {
-            light->effect = (light->effect - 2 + 15) % 15 + 1; // Decrease effect (1 to 8)
+            light->effect = (light->effect - 2 + light->maxeffects) % light->maxeffects + 1; // Decrease effect (1 to 8)
         }
         break;
     case 1: // Color
@@ -351,8 +359,8 @@ int main(int argc, char *argv[])
 
     const char *effect_names[] = {
         "Linear", "Breathe", "Interval Breathe", "Static",
-        "Blink 1", "Blink 2", "Blink 3", "Rainbow", "TwinkleEffect",
-        "FireEffect", "GlitterEffect", "NeonGlowEffect", "FireflyEffect", "AuroraEffect", "Reactive"};
+        "Blink 1", "Blink 2", "Blink 3", "Rainbow", "Twinkle",
+        "Fire", "Glitter", "NeonGlow", "Firefly", "Aurora", "Reactive", "Topbar Rainbow","Topbar night"};
 
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);

@@ -20,6 +20,7 @@ typedef struct
 {
     char name[MAX_NAME_LEN];
     int effect;
+    int last_effect;
     int duration;
     uint32_t color;
     bool updated;
@@ -27,6 +28,8 @@ typedef struct
     int current_g;
     int current_b;
     float progress;
+    int colorarray[10];
+
 } LightSettings;
 
 bool first_run = true;
@@ -332,10 +335,9 @@ void ColorWave(float progress, int *r, int *g, int *b)
     HSVtoRGB(h, s, v, r, g, b);
 }
 
-
 void FadeToBlack(int *r, int *g, int *b, float fadeAmount)
 {
- 
+
     fadeAmount = fadeAmount * 5.0f;
     if (fadeAmount < 0)
         fadeAmount = 0;
@@ -351,13 +353,22 @@ void FadeToBlack(int *r, int *g, int *b, float fadeAmount)
 float mapSpeedToProgress(int speed)
 {
     float progress;
+    if (speed <= 500)
+    {
+        // Map speed from 0 to 1000 to progress from 0.05 to 0.01
+        float maxSpeedSegment1 = 500.0f;
+        float minSpeedSegment1 = 0.0f;
+        float maxProgressSegment1 = 1.1f;
+        float minProgressSegment1 = 0.1f;
 
-    if (speed <= 1000)
+        progress = maxProgressSegment1 - ((speed - minSpeedSegment1) / (maxSpeedSegment1 - minSpeedSegment1)) * (maxProgressSegment1 - minProgressSegment1);
+    }
+    else if (speed <= 1000)
     {
         // Map speed from 0 to 1000 to progress from 0.05 to 0.01
         float maxSpeedSegment1 = 1000.0f;
-        float minSpeedSegment1 = 0.0f;
-        float maxProgressSegment1 = 0.05f;
+        float minSpeedSegment1 = 500.0f;
+        float maxProgressSegment1 = 0.1f;
         float minProgressSegment1 = 0.01f;
 
         progress = maxProgressSegment1 - ((speed - minSpeedSegment1) / (maxSpeedSegment1 - minSpeedSegment1)) * (maxProgressSegment1 - minProgressSegment1);
@@ -381,18 +392,33 @@ float mapSpeedToProgress(int speed)
     return progress;
 }
 
+void shiftColors(int colors[], int size)
+{
+    int last = colors[size - 1];
+    for (int i = size - 1; i > 0; i--)
+    {
+        colors[i] = colors[i - 1];
+    }
+    colors[0] = last;
+    printf("shifting colors\n");
+}
+
 void update_light_settings(LightSettings *light, const char *dir)
 {
     char filepath[256];
+    char filepath2[256];
     FILE *file;
+    FILE *file2;
     light->progress += mapSpeedToProgress(light->duration);
 
     if (light->progress > 1.0f)
         light->progress = 0.0f;
     // Update effect and other settings
     snprintf(filepath, sizeof(filepath), "%s/effect_rgb_hex_%s", dir, light->name);
+    snprintf(filepath2, sizeof(filepath2), "%s/frame_hex", dir, light->name);
     file = fopen(filepath, "w");
-    if (file != NULL)
+    file2 = fopen(filepath2, "w");
+    if (file != NULL && file2 != NULL)
     {
         SDL_Color tempcolor = HexIntToColor(light->color);
         int r, g, b;
@@ -456,13 +482,53 @@ void update_light_settings(LightSettings *light, const char *dir)
                 }
             }
         }
+        else if (light->effect == 16)
+        {
+
+            ColorWave(light->progress, &r, &g, &b);
+            fprintf(file2, "%02X%02X%02X ", r, g, b);
+            fprintf(file2, "%02X%02X%02X ", r, g, b);
+
+            ColorWave(light->progress + 0.1, &r, &g, &b);
+            fprintf(file2, "%02X%02X%02X ", r, g, b);
+            fprintf(file2, "%02X%02X%02X ", r, g, b);
+
+            ColorWave(light->progress + 0.2, &r, &g, &b);
+            fprintf(file2, "%02X%02X%02X ", r, g, b);
+            fprintf(file2, "%02X%02X%02X ", r, g, b);
+
+            ColorWave(light->progress + 0.3, &r, &g, &b);
+            fprintf(file2, "%02X%02X%02X ", r, g, b);
+            fprintf(file2, "%02X%02X%02X ", r, g, b);
+
+            ColorWave(light->progress + 0.4, &r, &g, &b);
+            fprintf(file2, "%02X%02X%02X ", r, g, b);
+            fprintf(file2, "%02X%02X%02X ", r, g, b);
+        }
+        else if (light->effect == 17)
+        {
+
+            for (int i = 1; i < 10; i++)
+            {
+                fprintf(file2, "%06X ", light->colorarray[i]);
+            }
+            if (light->progress == 0.0)
+                shiftColors(light->colorarray, 10);
+        }
         else
         {
             fprintf(file, "%06X\n", light->color);
         }
         fclose(file);
+        fclose(file2);
     }
+    // if (light->effect == 17)
+    // {
 
+    //     printf("progress %f\n", light->progress);
+    //     if (light->progress == 0.0)
+    //         shiftColors(light->colorarray, 10);
+    // }
     // if (light->effect == 16)
     // {
     //     printf("pressed %d\n",pressed);
@@ -501,29 +567,23 @@ void update_light_settings(LightSettings *light, const char *dir)
     file = fopen(filepath, "w");
     if (file != NULL)
     {
-        fprintf(file, "%d\n", light->effect >= 8 ? 4 : light->effect);
+        fprintf(file, "%d\n", light->effect >= 8 ? light->effect >= 16 ? 0 : 4 : light->effect);
         fclose(file);
     }
 }
 
 bool checkIfEffectChanged(LightSettings *light)
 {
-    char filepath[256];
-    FILE *file;
-    snprintf(filepath, sizeof(filepath), "/sys/class/led_anim/effect_%s", light->name);
-    file = fopen(filepath, "r");
-    if (file != NULL)
+
+    if (light->effect != light->last_effect)
     {
-        char current_value[20];
-        if (fgets(current_value, sizeof(current_value), file))
-        {
-            int current_effect;
-            sscanf(current_value, "%d", &current_effect);
-            fclose(file);
-            return (light->effect != current_effect);
-        }
+        light->last_effect = light->effect;
+        return true;
     }
-    return false;
+    else
+    {
+        return false;
+    }
 }
 
 int main()
@@ -567,6 +627,14 @@ int main()
 
             if (lights[i].updated || first_run || lights[i].effect >= 8)
             {
+                if (first_run || lights[i].updated)
+                {
+                    int initialColorArray[10] = {lights[i].color, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000};
+                    for (int j = 0; j < 8; j++)
+                    {
+                        lights[i].colorarray[j] = initialColorArray[j];
+                    }
+                }
                 update_light_settings(&lights[i], "/sys/class/led_anim");
                 lights[i].updated = false;
             }
