@@ -4,4 +4,4 @@ apt-get install libsdl2-dev libsdl2-ttf-dev
 
 gcc -o main main.c option.c -lSDL2 -lSDL2_ttf -lSDL2_image -lgif -lm
 
-gcc -o lcdaemon lcdaemon.c -lm
+gcc -o lcdaemon lcdaemon.c -lSDL2 -lm

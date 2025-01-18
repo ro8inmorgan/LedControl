@@ -574,15 +574,35 @@ void update_light_settings(LightSettings *light, const char *dir)
 
 bool checkIfEffectChanged(LightSettings *light)
 {
-
-    if (light->effect != light->last_effect)
+    if (light->effect < 8)
     {
-        light->last_effect = light->effect;
-        return true;
+        char filepath[256];
+        FILE *file;
+        snprintf(filepath, sizeof(filepath), "/sys/class/led_anim/effect_%s", light->name);
+        file = fopen(filepath, "r");
+        if (file != NULL)
+        {
+            char current_value[20];
+            if (fgets(current_value, sizeof(current_value), file))
+            {
+                int current_effect;
+                sscanf(current_value, "%d", &current_effect);
+                fclose(file);
+                return (light->effect != current_effect);
+            }
+        }
     }
     else
     {
-        return false;
+        if (light->effect != light->last_effect)
+        {
+            light->last_effect = light->effect;
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 }
 
