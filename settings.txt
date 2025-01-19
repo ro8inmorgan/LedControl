@@ -1,20 +1,28 @@
 [f1]
 effect=4
+maxeffects=15
 color=0xFFFFFF
 duration=1000
+brightness=100
 
 [f2]
 effect=4
+maxeffects=15
 color=0xFFFFFF
 duration=1000
+brightness=100
 
 [m]
 effect=4
+maxeffects=17
 color=0xFFFFFF
 duration=1000
+brightness=100
 
 [lr]
 effect=4
+maxeffects=15
 color=0xFFFFFF
 duration=1000
+brightness=100
 

@@ -25,6 +25,7 @@ typedef struct
     int effect;
     int last_effect;
     int duration;
+    int brightness;
     uint32_t color;
     bool updated;
     int current_r;
@@ -132,7 +133,7 @@ void changePermissions(const char *path, int writable)
     }
 }
 
-void changebrightness(const char *dir, int brightness)
+void changebrightness(const char *dir, const LightSettings *lights)
 {
     char filepath[256];
     FILE *file;
@@ -142,7 +143,7 @@ void changebrightness(const char *dir, int brightness)
     file = fopen(filepath, "w");
     if (file != NULL)
     {
-        fprintf(file, "%d\n", brightness);
+        fprintf(file, "%d\n", lights[2].brightness);
         fclose(file);
     }
     chmodfile(filepath, 0);
@@ -151,7 +152,7 @@ void changebrightness(const char *dir, int brightness)
     file = fopen(filepath, "w");
     if (file != NULL)
     {
-        fprintf(file, "%d\n", brightness);
+        fprintf(file, "%d\n", lights[0].brightness);
         fclose(file);
     }
     chmodfile(filepath, 0);
@@ -160,7 +161,7 @@ void changebrightness(const char *dir, int brightness)
     file = fopen(filepath, "w");
     if (file != NULL)
     {
-        fprintf(file, "%d\n", brightness);
+        fprintf(file, "%d\n", lights[3].brightness);
         fclose(file);
     }
     chmodfile(filepath, 0);
@@ -176,9 +177,8 @@ void handle_sigcont(int sig)
     changePermissions("/sys/class/led_anim", 0);
     first_run = true;
 }
-void handle_sigsleep(int sig)
+void handle_sigsleep()
 {
-    changebrightness("/sys/class/led_anim", 100);
     changePermissions("/sys/class/led_anim", 1);
 }
 
@@ -256,6 +256,7 @@ int read_settings(const char *filename, LightSettings *lights, int max_lights)
         {
             int temp_value;
             int temp_duration;
+            int temp_brightness;
             uint32_t temp_color;
 
             if (sscanf(line, "effect=%d", &temp_value) == 1)
@@ -282,6 +283,15 @@ int read_settings(const char *filename, LightSettings *lights, int max_lights)
                 if (lights[current_light].duration != temp_duration)
                 {
                     lights[current_light].duration = temp_duration;
+                    lights[current_light].updated = true;
+                }
+                continue;
+            }
+            if (sscanf(line, "brightness=%d", &temp_brightness) == 1)
+            {
+                if (lights[current_light].brightness != temp_brightness)
+                {
+                    lights[current_light].brightness = temp_brightness;
                     lights[current_light].updated = true;
                 }
                 continue;
@@ -745,7 +755,7 @@ int main()
     signal(SIGSTOP, handle_sigsleep);
 
     changePermissions("/sys/class/led_anim", 0);
-    changebrightness("/sys/class/led_anim", 100);
+
     while (running)
     {
         if (!jsopen)
@@ -795,6 +805,7 @@ int main()
                         lights[i].colorarray[j] = initialColorArray[j];
                     }
                 }
+                changebrightness("/sys/class/led_anim", lights);
                 update_light_settings(&lights[i], "/sys/class/led_anim");
                 lights[i].updated = false;
             }

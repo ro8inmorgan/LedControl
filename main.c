@@ -19,6 +19,7 @@ typedef struct
     int duration;
     char friendlyname[50];
     int maxeffects;
+    int brightness;
 } LightSettings;
 
 LightSettings lights[NUM_OPTIONS];
@@ -85,6 +86,11 @@ int read_settings(const char *filename, LightSettings *lights, int max_lights)
                 lights[current_light].maxeffects = temp_value;
                 continue;
             }
+            if (sscanf(line, "brightness=%d", &temp_value) == 1)
+            {
+                lights[current_light].brightness = temp_value;
+                continue;
+            }
         }
     }
 
@@ -119,13 +125,15 @@ int save_settings(const char *filename, LightSettings *lights, int max_lights)
         fprintf(file, "effect=%d\n", lights[i].effect);
         fprintf(file, "color=0x%06X\n", lights[i].color);
         fprintf(file, "duration=%d\n", lights[i].duration);
-        fprintf(file, "maxeffects=%d\n\n", lights[i].maxeffects);
+        fprintf(file, "maxeffects=%d\n", lights[i].maxeffects);
+        fprintf(file, "brightness=%d\n\n", lights[i].brightness);
 
         fprintf(shm_file, "[%s]\n", lights[i].name);
         fprintf(shm_file, "effect=%d\n", lights[i].effect);
         fprintf(shm_file, "color=0x%06X\n", lights[i].color);
         fprintf(shm_file, "duration=%d\n", lights[i].duration);
-        fprintf(shm_file, "maxeffects=%d\n\n", lights[i].maxeffects);
+        fprintf(shm_file, "maxeffects=%d\n", lights[i].maxeffects);
+        fprintf(shm_file, "brightness=%d\n\n", lights[i].brightness);
     }
 
     fclose(file);
@@ -251,6 +259,16 @@ void handle_light_input(LightSettings *light, SDL_Event *event, int selected_set
         else if (event->key.keysym.sym == SDLK_LEFT || event->cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_LEFT)
         {
             light->duration = (light->duration - 100 + 5000) % 5000; // Decrease duration
+        }
+        break;
+    case 3: // Brightness
+        if (event->key.keysym.sym == SDLK_RIGHT || event->cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_RIGHT)
+        {
+            light->brightness = (light->brightness + 5) % 105; // Increase duration
+        }
+        else if (event->key.keysym.sym == SDLK_LEFT || event->cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_LEFT)
+        {
+            light->brightness = (light->brightness - 5 + 105) % 105; // Decrease duration
         }
         break;
     }
@@ -385,10 +403,10 @@ int main(int argc, char *argv[])
                 switch (event.key.keysym.sym)
                 {
                 case SDLK_DOWN:
-                    selected_setting = (selected_setting + 1) % 3;
+                    selected_setting = (selected_setting + 1) % 4;
                     break;
                 case SDLK_UP:
-                    selected_setting = (selected_setting - 1 + 3) % 3;
+                    selected_setting = (selected_setting - 1 + 4) % 4;
                     break;
                 case SDLK_TAB:
                     selected_option = (selected_option - 1 + NUM_OPTIONS) % NUM_OPTIONS;
@@ -413,10 +431,10 @@ int main(int argc, char *argv[])
                 switch (event.cbutton.button)
                 {
                 case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-                    selected_setting = (selected_setting + 1) % 3;
+                    selected_setting = (selected_setting + 1) % 4;
                     break;
                 case SDL_CONTROLLER_BUTTON_DPAD_UP:
-                    selected_setting = (selected_setting - 1 + 3) % 3;
+                    selected_setting = (selected_setting - 1 + 4) % 4;
                     break;
                 case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
                     selected_option = (selected_option - 1 + NUM_OPTIONS) % NUM_OPTIONS;
@@ -468,13 +486,15 @@ int main(int argc, char *argv[])
         SDL_DestroyTexture(texture);
 
         // Display settings
-        const char *settings_labels[3] = {"Effect", "Color", "Speed"};
-        int settings_values[3] = {
+        const char *settings_labels[4] = {"Effect", "Color", "Speed","Brightness"};
+        int settings_values[4] = {
             lights[selected_option].effect,
             lights[selected_option].color,
-            lights[selected_option].duration};
+            lights[selected_option].duration,
+            lights[selected_option].brightness,
+        };
 
-        for (int j = 0; j < 3; ++j)
+        for (int j = 0; j < 4; ++j)
         {
             char setting_text[256];
             if (j == 0)
