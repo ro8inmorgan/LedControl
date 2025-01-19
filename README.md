@@ -2,6 +2,8 @@
 Led Control app for TrimUI Brick (It's been reported on reddit that it works with Smart pro too)    
 Works with Stock OS (Mix, cross etc) and MinUI. Might work with Knulli too but not tested
 
+![alt text](screenshot.png "Screenshot LedControl")
+
 # Installation
 You can download the latest version of the Led Control app from the [Releases page](https://github.com/ro8inmorgan/LedControl/releases). 
 
