@@ -5,10 +5,10 @@ Works with Stock OS (Mix, cross etc) and MinUI. Might work with Knulli too but n
 # Installation
 You can download the latest version of the Led Control app from the [Releases page](https://github.com/ro8inmorgan/LedControl/releases). 
 
-Stock/StockMix/Crossmix:
+Stock/StockMix/Crossmix:   
 Just unzip and copy the LedControl.pak folder to the Apps folder on your SD Card, then bootup your TrimUI Brick and the Led Control app will be available in the Apps menu.
 
-MinUI:
+MinUI:   
 Copy the LedControl.pak folder Tools/tg3040/ folder on your SD card, reboot your brick and app should be available in the Tools section
 
 # Instructions
