@@ -12,6 +12,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <linux/joystick.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <string.h>
 
 #define MAX_LIGHTS 10
 #define MAX_NAME_LEN 50
@@ -43,6 +46,126 @@ int current_b;
 
 volatile sig_atomic_t running = 1;
 
+int jsopen = 0; // Flag to keep track of whether the file is open
+
+void chmodfile(const char *file, int writable)
+{
+    struct stat statbuf;
+    if (stat(file, &statbuf) == 0)
+    {
+        mode_t newMode;
+        if (writable)
+        {
+            // Add write permissions for all users
+            newMode = statbuf.st_mode | S_IWUSR | S_IWGRP | S_IWOTH;
+        }
+        else
+        {
+            // Remove write permissions for all users
+            newMode = statbuf.st_mode & ~(S_IWUSR | S_IWGRP | S_IWOTH);
+        }
+
+        // Apply the new permissions
+        if (chmod(file, newMode) != 0)
+        {
+            printf("chmod error %d %s", writable, file);
+        }
+    }
+    else
+    {
+        printf("stat error %d %s", writable, file);
+    }
+}
+
+void changePermissions(const char *path, int writable)
+{
+    DIR *dir;
+    struct dirent *entry;
+
+    // Open the directory
+    if ((dir = opendir(path)) != NULL)
+    {
+        while ((entry = readdir(dir)) != NULL)
+        {
+            // Skip "." and ".." entries
+            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            {
+                continue;
+            }
+
+            // Construct new path
+            char newPath[1024];
+            snprintf(newPath, sizeof(newPath), "%s/%s", path, entry->d_name);
+
+            // Get current permissions
+            struct stat statbuf;
+            if (stat(newPath, &statbuf) == 0)
+            {
+                mode_t newMode;
+                if (writable)
+                {
+                    // Add write permissions for all users
+                    newMode = statbuf.st_mode | S_IWUSR | S_IWGRP | S_IWOTH;
+                }
+                else
+                {
+                    // Remove write permissions for all users
+                    newMode = statbuf.st_mode & ~(S_IWUSR | S_IWGRP | S_IWOTH);
+                }
+
+                // Apply the new permissions
+                if (chmod(newPath, newMode) != 0)
+                {
+                    printf("error chmod\n");
+                }
+            }
+            else
+            {
+                printf("error stat\n");
+            }
+        }
+        closedir(dir);
+    }
+    else
+    {
+        perror("opendir");
+    }
+}
+
+void changebrightness(const char *dir, int brightness)
+{
+    char filepath[256];
+    FILE *file;
+    // first set brightness
+    snprintf(filepath, sizeof(filepath), "%s/max_scale", dir);
+    chmodfile(filepath, 1);
+    file = fopen(filepath, "w");
+    if (file != NULL)
+    {
+        fprintf(file, "%d\n", brightness);
+        fclose(file);
+    }
+    chmodfile(filepath, 0);
+    snprintf(filepath, sizeof(filepath), "%s/max_scale_f1f2", dir);
+    chmodfile(filepath, 1);
+    file = fopen(filepath, "w");
+    if (file != NULL)
+    {
+        fprintf(file, "%d\n", brightness);
+        fclose(file);
+    }
+    chmodfile(filepath, 0);
+    snprintf(filepath, sizeof(filepath), "%s/max_scale_lr", dir);
+    chmodfile(filepath, 1);
+    file = fopen(filepath, "w");
+    if (file != NULL)
+    {
+        fprintf(file, "%d\n", brightness);
+        fclose(file);
+    }
+    chmodfile(filepath, 0);
+}
+
 void handle_sigterm(int sig)
 {
     running = 0;
@@ -50,7 +173,13 @@ void handle_sigterm(int sig)
 
 void handle_sigcont(int sig)
 {
+    changePermissions("/sys/class/led_anim", 0);
     first_run = true;
+}
+void handle_sigsleep(int sig)
+{
+    changebrightness("/sys/class/led_anim", 100);
+    changePermissions("/sys/class/led_anim", 1);
 }
 
 int read_settings(const char *filename, LightSettings *lights, int max_lights)
@@ -60,8 +189,9 @@ int read_settings(const char *filename, LightSettings *lights, int max_lights)
     {
         // first run read settings from disk and write to shm
         printf("First run\n");
-
-        FILE *diskfile = fopen(filename, "r");
+        char diskfilename[256];
+        snprintf(diskfilename, sizeof(diskfilename), "/etc/LedControl/%s", filename);
+        FILE *diskfile = fopen(diskfilename, "r");
         if (diskfile == NULL)
         {
             perror("Unable to open settings file");
@@ -74,7 +204,6 @@ int read_settings(const char *filename, LightSettings *lights, int max_lights)
         if (file == NULL)
         {
             perror("Unable to open /dev/shm/ file");
-            fclose(diskfile); // closing the diskfile to avoid a memory leak
             return 1;
         }
 
@@ -400,7 +529,6 @@ void shiftColors(int colors[], int size)
         colors[i] = colors[i - 1];
     }
     colors[0] = last;
-    printf("shifting colors\n");
 }
 
 void update_light_settings(LightSettings *light, const char *dir)
@@ -413,11 +541,16 @@ void update_light_settings(LightSettings *light, const char *dir)
 
     if (light->progress > 1.0f)
         light->progress = 0.0f;
+
     // Update effect and other settings
     snprintf(filepath, sizeof(filepath), "%s/effect_rgb_hex_%s", dir, light->name);
     snprintf(filepath2, sizeof(filepath2), "%s/frame_hex", dir, light->name);
+
+    chmodfile(filepath, 1);
+    chmodfile(filepath2, 1);
     file = fopen(filepath, "w");
     file2 = fopen(filepath2, "w");
+
     if (file != NULL && file2 != NULL)
     {
         SDL_Color tempcolor = HexIntToColor(light->color);
@@ -519,57 +652,43 @@ void update_light_settings(LightSettings *light, const char *dir)
         {
             fprintf(file, "%06X\n", light->color);
         }
+
         fclose(file);
         fclose(file2);
     }
-    // if (light->effect == 17)
-    // {
 
-    //     printf("progress %f\n", light->progress);
-    //     if (light->progress == 0.0)
-    //         shiftColors(light->colorarray, 10);
-    // }
-    // if (light->effect == 16)
-    // {
-    //     printf("pressed %d\n",pressed);
-    //     if (pressed)
-    //     { // Set the current color to the light color
-    //         current_r = light->color >> 16 & 0xFF;
-    //         current_g = light->color >> 8 & 0xFF;
-    //         current_b = light->color & 0xFF;
-    //         // fprintf(file, "%06X\n", light->color);
-    //     }
-    //     else
-    //     { // Fade the color to black
-    //         FadeToBlack(&current_r, &current_g, &current_b, 5.5);
-    //         int faded_color = (current_r << 16) | (current_g << 8) | current_b;
-    //         printf("faded color: %06X\n", faded_color);
-    //     }
-    // }
+    chmodfile(filepath, 0);
+    chmodfile(filepath2, 0);
 
     snprintf(filepath, sizeof(filepath), "%s/effect_cycles_%s", dir, light->name);
+    chmodfile(filepath, 1);
     file = fopen(filepath, "w");
     if (file != NULL)
     {
         fprintf(file, "%d\n", -1);
         fclose(file);
     }
+    chmodfile(filepath, 0);
 
     snprintf(filepath, sizeof(filepath), "%s/effect_duration_%s", dir, light->name);
+    chmodfile(filepath, 1);
     file = fopen(filepath, "w");
     if (file != NULL)
     {
         fprintf(file, "%d\n", light->duration);
         fclose(file);
     }
+    chmodfile(filepath, 0);
 
     snprintf(filepath, sizeof(filepath), "%s/effect_%s", dir, light->name);
+    chmodfile(filepath, 1);
     file = fopen(filepath, "w");
     if (file != NULL)
     {
         fprintf(file, "%d\n", light->effect >= 8 ? light->effect >= 16 ? 0 : 4 : light->effect);
         fclose(file);
     }
+    chmodfile(filepath, 0);
 }
 
 bool checkIfEffectChanged(LightSettings *light)
@@ -613,16 +732,37 @@ int main()
     if (fd < 0)
     {
         perror("Failed to open joystick device");
-        // return 1;
+    }
+    else
+    {
+        jsopen = 1;
     }
 
     LightSettings lights[MAX_LIGHTS] = {0};
 
     signal(SIGTERM, handle_sigterm);
     signal(SIGCONT, handle_sigcont);
+    signal(SIGSTOP, handle_sigsleep);
 
+    changePermissions("/sys/class/led_anim", 0);
+    changebrightness("/sys/class/led_anim", 100);
     while (running)
     {
+        if (!jsopen)
+        {
+            // Attempt to open the device if it is not already opened
+            fd = open("/dev/input/js0", O_RDONLY | O_NONBLOCK);
+            if (fd < 0)
+            {
+                perror("Failed to open joystick device");
+            }
+            else
+            {
+                printf("Joystick device opened successfully.\n");
+                jsopen = 1; // Set the flag to indicate the device is opened
+            }
+        }
+
         struct js_event event;
         if (read(fd, &event, sizeof(event)) > 0)
         {

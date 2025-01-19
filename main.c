@@ -27,7 +27,10 @@ const char *lightnames[] = {
 
 int read_settings(const char *filename, LightSettings *lights, int max_lights)
 {
-    FILE *file = fopen(filename, "r");
+
+    char diskfilename[256];
+    snprintf(diskfilename, sizeof(diskfilename), "/etc/LedControl/%s", filename);
+    FILE *file = fopen(diskfilename, "r");
     if (file == NULL)
     {
         perror("Unable to open settings file");
@@ -91,8 +94,10 @@ int read_settings(const char *filename, LightSettings *lights, int max_lights)
 
 int save_settings(const char *filename, LightSettings *lights, int max_lights)
 {
+    char diskfilename[256];
+    snprintf(diskfilename, sizeof(diskfilename), "/etc/LedControl/%s", filename);
     SDL_Log("saving settings");
-    FILE *file = fopen(filename, "w");
+    FILE *file = fopen(diskfilename, "w");
     if (file == NULL)
     {
         perror("Unable to open settings file for writing");
@@ -360,7 +365,7 @@ int main(int argc, char *argv[])
     const char *effect_names[] = {
         "Linear", "Breathe", "Interval Breathe", "Static",
         "Blink 1", "Blink 2", "Blink 3", "Rainbow", "Twinkle",
-        "Fire", "Glitter", "NeonGlow", "Firefly", "Aurora", "Reactive", "Topbar Rainbow","Topbar night"};
+        "Fire", "Glitter", "NeonGlow", "Firefly", "Aurora", "Reactive", "Topbar Rainbow", "Topbar night"};
 
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
