@@ -18,16 +18,16 @@ else
 fi
 chmod +x /etc/init.d/lcservice >> launch.log
 /etc/init.d/lcservice enable >> launch.log
-/etc/init.d/lcservice stop >> launch.log
-/etc/init.d/lcservice start >> launch.log
 
 
 # Check if deamon is running
 if pgrep -f "lcdaemon" >/dev/null; then
     echo "lcdaemon is already running" >> launch.log
-else
-    /etc/LedControl/lcdaemon > lcdaemon.log 2>&1 &
-    echo "lcdaemon started" >> launch.log
+    killall lcdaemon
 fi
+
+/etc/LedControl/lcdaemon > lcdaemon.log 2>&1 &
+echo "lcdaemon started" >> launch.log
+
 
 ./main > ledcontrol.log 2>&1
