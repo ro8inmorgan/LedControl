@@ -456,12 +456,6 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    int fd = open("/dev/input/js0", O_RDONLY | O_NONBLOCK);
-    if (fd < 0)
-    {
-        perror("Failed joystick device");
-    }
-
     SDL_GameController *controller = NULL;
     for (int i = 0; i < SDL_NumJoysticks(); ++i)
     {
@@ -583,18 +577,10 @@ int main(int argc, char *argv[])
         SDL_Color highlight_color = {0, 0, 0, 255};    // Cyan color for the current setting
         SDL_Color selected_color = {255, 255, 0, 255}; // Yellow color for the selected option
 
-        struct js_event event;
-        int last_pressed = 0;
-        if (read(fd, &event, sizeof(event)) > 0)
-        {
-            if (event.type == JS_EVENT_AXIS || event.type == JS_EVENT_BUTTON)
-            {
-                last_pressed = event.value == 1 ? event.number : last_pressed;
-            }
-        }
-        char last_pressed_str[256];
-        snprintf(last_pressed_str, sizeof(last_pressed_str), "lastpressed: %d", last_pressed);
-        SDL_Surface *surface = TTF_RenderText_Solid(font, last_pressed_str, color);
+        // Display light name
+        char light_name_text[256];
+        snprintf(light_name_text, sizeof(light_name_text), "%s", lights[selected_light].friendlyname);
+        SDL_Surface *surface = TTF_RenderText_Solid(font, light_name_text, color);
         SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
 
         int text_width = surface->w;
@@ -602,22 +588,7 @@ int main(int argc, char *argv[])
         SDL_FreeSurface(surface);
 
         // Calculate centered position
-        SDL_Rect dstrect = {500, 30, text_width, text_height};
-        SDL_RenderCopy(renderer, texture, NULL, &dstrect);
-        SDL_DestroyTexture(texture);
-
-        // Display light name
-        char light_name_text[256];
-        snprintf(light_name_text, sizeof(light_name_text), "%s", lights[selected_light].friendlyname);
-        surface = TTF_RenderText_Solid(font, light_name_text, color);
-        texture = SDL_CreateTextureFromSurface(renderer, surface);
-
-        text_width = surface->w;
-        text_height = surface->h;
-        SDL_FreeSurface(surface);
-
-        // Calculate centered position
-        dstrect = (SDL_Rect){50, 30, text_width, text_height};
+        SDL_Rect dstrect = (SDL_Rect){50, 30, text_width, text_height};
         SDL_RenderCopy(renderer, texture, NULL, &dstrect);
         SDL_DestroyTexture(texture);
 
