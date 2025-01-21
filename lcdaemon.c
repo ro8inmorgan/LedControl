@@ -27,17 +27,21 @@ typedef struct
     int duration;
     int brightness;
     uint32_t color;
+    uint32_t color2;
     bool updated;
     int current_r;
     int current_g;
     int current_b;
     float progress;
     int colorarray[10];
+    int trigger;
+    int running;
 
 } LightSettings;
 
 bool first_run = true;
 bool pressed = false;
+int last_pressed = 0;
 
 float progress = 0.0f;
 
@@ -255,8 +259,6 @@ int read_settings(const char *filename, LightSettings *lights, int max_lights)
         else if (current_light >= 0 && current_light < max_lights)
         {
             int temp_value;
-            int temp_duration;
-            int temp_brightness;
             uint32_t temp_color;
 
             if (sscanf(line, "effect=%d", &temp_value) == 1)
@@ -278,20 +280,38 @@ int read_settings(const char *filename, LightSettings *lights, int max_lights)
                 }
                 continue;
             }
-            if (sscanf(line, "duration=%d", &temp_duration) == 1)
+            if (sscanf(line, "color2=%x", &temp_color) == 1)
             {
-                if (lights[current_light].duration != temp_duration)
+                if (lights[current_light].color2 != temp_color)
                 {
-                    lights[current_light].duration = temp_duration;
+                    lights[current_light].color2 = temp_color;
                     lights[current_light].updated = true;
                 }
                 continue;
             }
-            if (sscanf(line, "brightness=%d", &temp_brightness) == 1)
+            if (sscanf(line, "duration=%d", &temp_value) == 1)
             {
-                if (lights[current_light].brightness != temp_brightness)
+                if (lights[current_light].duration != temp_value)
                 {
-                    lights[current_light].brightness = temp_brightness;
+                    lights[current_light].duration = temp_value;
+                    lights[current_light].updated = true;
+                }
+                continue;
+            }
+            if (sscanf(line, "brightness=%d", &temp_value) == 1)
+            {
+                if (lights[current_light].brightness != temp_value)
+                {
+                    lights[current_light].brightness = temp_value;
+                    lights[current_light].updated = true;
+                }
+                continue;
+            }
+            if (sscanf(line, "trigger=%d", &temp_value) == 1)
+            {
+                if (lights[current_light].trigger != temp_value)
+                {
+                    lights[current_light].trigger = temp_value;
                     lights[current_light].updated = true;
                 }
                 continue;
@@ -541,6 +561,7 @@ void shiftColors(int colors[], int size)
     colors[0] = last;
 }
 
+float wastriggered = 0.0f;
 void update_light_settings(LightSettings *light, const char *dir)
 {
     char filepath[256];
@@ -603,25 +624,76 @@ void update_light_settings(LightSettings *light, const char *dir)
         }
         else if (light->effect == 15)
         {
+            printf("pressed: %d, trigger setting: %d\n", pressed, light->trigger);
             if (pressed)
             {
-                light->current_r = light->color >> 16 & 0xFF;
-                light->current_g = light->color >> 8 & 0xFF;
-                light->current_b = light->color & 0xFF;
-                light->progress = 0.0f;
-                fprintf(file, "%06X\n", light->color);
+                int doit = 0;
+                if (light->trigger == 12 || last_pressed == light->trigger - 1)
+                {
+                    doit = 1;
+                }
+                if (light->trigger == 13 && (last_pressed == 4 || last_pressed == 5))
+                {
+                    doit = 1;
+                }
+                if (light->trigger == 14 && last_pressed == 100)
+                {
+                    doit = 1;
+                }
+                if (doit == 1)
+                {
+                    light->current_r = light->color >> 16 & 0xFF;
+                    light->current_g = light->color >> 8 & 0xFF;
+                    light->current_b = light->color & 0xFF;
+                    light->progress = 0.0f;
+                    light->running = 1;
+                    fprintf(file, "%06X\n", light->color);
+                }
             }
             else
             {
-                if (light->duration > 0)
+                if (light->duration > 0 && light->running > 0)
                 {
-                    FadeToBlack(&light->current_r, &light->current_g, &light->current_b, light->progress);
+                    const int colorr = light->color2 >> 16 & 0xFF;
+                    const int colorg = light->color2 >> 8 & 0xFF;
+                    const int colorb = light->color2 & 0xFF;
+                    const float speed = (5000 / light->duration) * 1;
+                    // FadeToBlack(&light->current_r, &light->current_g, &light->current_b, light->progress);
+                    if (light->current_r > colorr)
+                    {
+                        light->current_r = light->current_r - speed;
+                    }
+                    if (light->current_g > colorg)
+                    {
+                        light->current_g = light->current_g - speed;
+                    }
+                    if (light->current_b > colorb)
+                    {
+                        light->current_b = light->current_b - speed;
+                    }
+                    if (light->current_r < colorr)
+                    {
+                        light->current_r = light->current_r + speed;
+                    }
+                    if (light->current_g < colorg)
+                    {
+                        light->current_g = light->current_g + speed;
+                    }
+                    if (light->current_b < colorb)
+                    {
+                        light->current_b = light->current_b + speed;
+                    }
                     int faded_color = (light->current_r << 16) | (light->current_g << 8) | light->current_b;
+                    if (light->current_r >= colorr - speed && light->current_g >= colorg - speed && light->current_b >= colorb - speed && light->current_r <= colorr + speed && light->current_g <= colorg + speed && light->current_b <= colorb + speed)
+                    {
+                        light->running = 0;
+                    }
                     fprintf(file, "%06X\n", faded_color);
                 }
                 else
                 {
-                    fprintf(file, "000000\n");
+                    fprintf(file, "%06X\n", light->color2);
+                    light->running = 0;
                 }
             }
         }
@@ -741,7 +813,7 @@ int main()
     int fd = open("/dev/input/js0", O_RDONLY | O_NONBLOCK);
     if (fd < 0)
     {
-        perror("Failed to open joystick device");
+        perror("Failed joystick device");
     }
     else
     {
@@ -764,7 +836,7 @@ int main()
             fd = open("/dev/input/js0", O_RDONLY | O_NONBLOCK);
             if (fd < 0)
             {
-                perror("Failed to open joystick device");
+                perror("Failed joystick device");
             }
             else
             {
@@ -779,6 +851,14 @@ int main()
             if (event.type == JS_EVENT_AXIS || event.type == JS_EVENT_BUTTON)
             {
                 pressed = event.value ? true : false;
+                if (event.type == JS_EVENT_BUTTON)
+                {
+                    last_pressed = event.number;
+                }
+                else
+                {
+                    last_pressed = 100;
+                }
             }
         }
 
