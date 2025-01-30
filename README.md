@@ -46,5 +46,5 @@ Use the seperate included LCRemove.pak app, copy it to your SD card same way, ru
 
 Donations are always welcome https://ko-fi.com/robindev :) :)
 
-#Thanks
-[@taylorbird] for updating README with new instructions
+#Thanks   
+[@taylorbird](https://github.com/taylorbird)! for updating README with new instructions
