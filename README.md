@@ -1,3 +1,11 @@
+# Before you begin, are you using MinUI?
+    
+Did you know MinUI actually is not doing vsync because of a wrong cores implementation? (just play something horizontal scrolling and it will skip a frame every few seconds, yes the game is not supposed to do that!) 
+No worries, I have build a version with a reworked emulator engine
+[https://github.com/ro8inmorgan/MinUI](https://github.com/ro8inmorgan/MinUI)
+
+Now onto the Stuff why you here for:
+    
 # LedControl
 
 Led Control app for TrimUI Brick (It's been reported on reddit that it works with Smart pro too)  
