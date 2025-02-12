@@ -50,7 +50,10 @@ Use the seperate included LCRemove.pak app, copy it to your SD card same way, ru
 - Maybe react to toggle to turn on/off leds
 - Create version for Knulli
 - If possible maybe ambilight function, need to test if I can access the screen buffer
-
+   
+# Special thanks   
+Thank you [Retro Game Corps](https://retrogamecorps.com) for mentioning my App in your TrimUI Brick guide!
+   
 # Donations
 
 Donations are always welcome https://ko-fi.com/robindev :) :)
