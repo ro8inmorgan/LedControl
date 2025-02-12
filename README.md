@@ -46,7 +46,8 @@ Please quit the app using the B button and not by holding the power button as th
 Use the seperate included LCRemove.pak app, copy it to your SD card same way, run the app and reboot. Leds will be restored to default functions. If you run Led Control app it will install again
 
 # TODO:
-
+- Got many more effects I want to add
+- Maybe react to toggle to turn on/off leds
 - Create version for Knulli
 - If possible maybe ambilight function, need to test if I can access the screen buffer
 
